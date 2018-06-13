@@ -1,0 +1,7 @@
+(;AB[ag][bf][be][ad][ce][cd][dd][dc][ec][ba][ca][cb]AW[ab][ac][bc][cc][bb][db][eb]
+[ea][fc][fd][ed][ee][ef][bg][cg][cf][bi]AP[MultiGo:4.2.4]SZ[13]MULTIGOGM[1]
+
+(;B[fb];W[gb]
+(;B[af];W[fa];B[bd])
+(;B[bd];W[af];B[aa];W[bc]))
+(;B[bd];W[af];B[aa];W[bc]))

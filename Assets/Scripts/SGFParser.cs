@@ -10,21 +10,21 @@ public class SGFParser : MonoBehaviour
     public List<TextAsset> sgfFiles;
     private List<List<int>> sgfIndexList;
     private List<int> treeNodes;
-	private List<List<int>> branchIndexList;
-	private List<int> treeBranchList;
-	private string sgfStr = "";
+    private List<List<int>> branchIndexList;
+    private List<int> treeBranchList;
+    private string sgfStr = "";
 
-	private bool isTree;
-	private int treeDepth = 0;
+    private bool isTree;
+    private int treeDepth = 0;
 
     void Start()
     {
-		sgfStr = "";
-		treeDepth = 0;
+        sgfStr = "";
+        treeDepth = 0;
         sgfIndexList = new List<List<int>>();
-		branchIndexList = new List<List<int>>();
+        branchIndexList = new List<List<int>>();
 
-		//SGF解析スタート！
+        //SGF解析スタート！
         ParseSGF();
     }
 
@@ -32,11 +32,11 @@ public class SGFParser : MonoBehaviour
     {
         foreach (TextAsset sgf in sgfFiles)
         {
-			treeDepth = 0;
-			isTree = false;
-			treeNodes = new List<int>();
-			treeBranchList = new List<int>();
-			branchIndexList = new List<List<int>>();
+            treeDepth = 0;
+            isTree = false;
+            treeNodes = new List<int>();
+            treeBranchList = new List<int>();
+            branchIndexList = new List<List<int>>();
 
             StringBuilder sb = new StringBuilder(sgf.text);
             sb.Replace("SZ[13]", "")
@@ -48,18 +48,19 @@ public class SGFParser : MonoBehaviour
 
             for (int n = 0; n < sgfLines.Length; n++)
             {
-                if (sgfLines[n].Length == 0) continue;
-				if (n == 0 || n == 1) continue;
-				Debug.Log("文字列(1行): " + sgfLines[n]);
-				Debug.Log("ツリーの深さ: " + treeDepth);
+                if (sgfLines[n].Length < 7) continue;
+                if (n == 0 || n == 1) continue;
+                Debug.Log("文字列(1行): " + sgfLines[n]);
+                Debug.Log("ツリーの深さ: " + treeDepth);
+                //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
                 int endCount = CountChar(sgfLines[n], ')');
-				//分岐がある場合
+                //分岐がある場合
                 if (endCount == 0)
                 {
-					treeDepth++;
-					if (treeDepth >= 1) isTree = true;
-					
+                    treeDepth++;
+                    if (treeDepth >= 1) isTree = true;
+
                     string[] nodeArray = sgfLines[n].Split(';');
                     foreach (string node in nodeArray)
                     {
@@ -72,31 +73,31 @@ public class SGFParser : MonoBehaviour
                         }
                         else
                         {
-							Debug.Log("座標文字: " + node);
-                        	string value = node.Substring(open + 1, 2);
+                            Debug.Log("座標文字: " + node);
+                            string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
                             if (key == "B" || key == "W")
                             {
-								if (isTree)
-								{
-									Debug.Log("終わり括弧が0つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
-									treeBranchList.Add(ConvertZahyoStringToInt(value));
-								}
-								else
-								{
-									treeNodes.Add(ConvertZahyoStringToInt(value));
-								}
+                                if (isTree)
+                                {
+                                    //Debug.Log("終わり括弧が0つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
+                                    treeBranchList.Add(ConvertZahyoStringToInt(value));
+                                }
+                                else
+                                {
+                                    treeNodes.Add(ConvertZahyoStringToInt(value));
+                                }
                             }
                         }
                     }
 
-					if (isTree)
-					{
-						branchIndexList.Add(treeBranchList);
-						Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
-					}
+                    if (isTree)
+                    {
+                        branchIndexList.Add(treeBranchList);
+                        //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
+                    }
                 }
-				//分岐がない場合
+                //分岐がない場合
                 else if (endCount == 1)
                 {
                     string[] nodeArray = sgfLines[n].Split(';');
@@ -111,62 +112,66 @@ public class SGFParser : MonoBehaviour
                         }
                         else
                         {
-							Debug.Log("座標文字: " + node);
-							string value = node.Substring(open + 1, 2);
+                            Debug.Log("座標文字: " + node);
+                            string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
                             if (key == "B" || key == "W")
                             {
-								if (isTree)
-								{
-									Debug.Log("終わり括弧が1つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
-									treeBranchList.Add(ConvertZahyoStringToInt(value));
-								}
-								else
-								{
-									treeNodes.Add(ConvertZahyoStringToInt(value));
-								}
+                                if (isTree)
+                                {
+                                    //Debug.Log("終わり括弧が1つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
+                                    treeBranchList.Add(ConvertZahyoStringToInt(value));
+                                }
+                                else
+                                {
+                                    treeNodes.Add(ConvertZahyoStringToInt(value));
+                                }
                             }
                         }
                     }
 
-					if (isTree)
-					{
-						branchIndexList.Add(treeBranchList);
-						Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
+                    if (isTree)
+                    {
+                        if (branchIndexList.Count == treeDepth)
+                        {
+                            branchIndexList.Add(treeBranchList);
+                            //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
-						for (int i = 0; i < treeDepth; i++)
-						{
-							foreach (int bIndex in branchIndexList[i])
-							{
-								Debug.Log("閉じ括弧が1つでtreeNodesに " + bIndex + " をAddした！");
-								treeNodes.Add(bIndex);
-							}
-						}
-					}
-					else
-					{
-						string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
-						Debug.Log("sgfIndexListに " + result + " をAddした！");
-						
-						sgfIndexList.Add(treeNodes);
-						treeNodes = new List<int>();
-					}
+                            for (int i = 0; i < treeDepth; i++)
+                            {
+                                foreach (int bIndex in branchIndexList[i])
+                                {
+                                    //Debug.Log("閉じ括弧が1つ以上でtreeNodesに " + bIndex + " をAddした！");
+                                    treeNodes.Add(bIndex);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
+                        //Debug.Log(result);
+                        //Debug.Log("sgfIndexListに " + result + " をAddした！");
+
+                        sgfIndexList.Add(treeNodes);
+                        treeNodes = new List<int>();
+                        treeBranchList = new List<int>();
+                        branchIndexList = new List<List<int>>();
+                    }
                 }
-				//分岐がある場合かつ、現在の分岐の最後である場合
-				else if (endCount >= 2)
-				{
-					//bool isLast = (sgfLines.Length - 1) == n;
+                //分岐がある場合かつ、現在の分岐の最後である場合
+                else if (endCount >= 2)
+                {
+                    if (endCount == 2)
+                    {
+                        treeDepth--;
+                    }
+                    else if (endCount >= 3)
+                    {
+                        treeDepth -= (endCount - 1);
+                    }
 
-					if (endCount == 2)
-					{
-						treeDepth--;
-					}
-					else if (endCount >= 3)
-					{
-						treeDepth -= (endCount - 1);
-					}
-
-			        string[] nodeArray = sgfLines[n].Split(';');
+                    string[] nodeArray = sgfLines[n].Split(';');
                     foreach (string node in nodeArray)
                     {
                         int open = node.IndexOf("[");
@@ -178,73 +183,95 @@ public class SGFParser : MonoBehaviour
                         }
                         else
                         {
-							Debug.Log("座標文字: " + node);
-							string value = node.Substring(open + 1, 2);
+                            Debug.Log("座標文字: " + node);
+                            string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
                             if (key == "B" || key == "W")
                             {
-								foreach (int index in treeNodes)
-								{
-									if (isTree)
-									{
-										Debug.Log("終わり括弧が2つ以上でtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
-										treeBranchList.Add(ConvertZahyoStringToInt(value));
-									}
-									else
-									{
-										treeNodes.Add(ConvertZahyoStringToInt(value));
-									}
-								}
+                                if (isTree)
+                                {
+                                    //Debug.Log("終わり括弧が2つ以上でtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
+                                    treeBranchList.Add(ConvertZahyoStringToInt(value));
+                                }
+                                else
+                                {
+                                    treeNodes.Add(ConvertZahyoStringToInt(value));
+                                }
                             }
                         }
                     }
 
-					if (isTree)
-					{
-						branchIndexList.Add(treeBranchList);
-						Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
+                    if (treeDepth <= 0) isTree = false;
+                    if ((sgfLines.Length - 1) == n) isTree = false;
 
-						for (int i = 0; i < treeDepth; i++)
-						{
-							foreach (int bIndex in branchIndexList[i])
-							{
-								Debug.Log("閉じ括弧が2つ以上でtreeNodesに " + bIndex + " をAddした！");
-								treeNodes.Add(bIndex);
-							}
-						}
-					}
-					else
-					{
-						string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
-						Debug.Log("sgfIndexListに " + result + " をAddした！");
+                    if (isTree)
+                    {
+                        if (branchIndexList.Count == treeDepth)
+                        {
+                            branchIndexList.Add(treeBranchList);
+                            //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
-						sgfIndexList.Add(treeNodes);
-						treeNodes = new List<int>();
-						treeBranchList = new List<int>();
-					}
+                            for (int i = 0; i < treeDepth; i++)
+                            {
+                                foreach (int bIndex in branchIndexList[i])
+                                {
+                                    //Debug.Log("閉じ括弧が2つ以上でtreeNodesに " + bIndex + " をAddした！");
+                                    treeNodes.Add(bIndex);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        bool isLast = (sgfLines.Length - 1) == n;
+                        if (isLast)
+                        {
+                            if (branchIndexList.Count == treeDepth)
+                            {
+                                branchIndexList.Add(treeBranchList);
+                                //("branchIndexList要素数: " + branchIndexList.Count);
 
-					if (treeDepth <= 0) isTree = false;
-				}
+                                for (int i = 0; i < treeDepth; i++)
+                                {
+                                    foreach (int bIndex in branchIndexList[i])
+                                    {
+                                        //Debug.Log("閉じ括弧が2つ以上でtreeNodesに " + bIndex + " をAddした！");
+                                        treeNodes.Add(bIndex);
+                                    }
+                                }
+                            }
+                        }
+
+                        //string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
+                        //Debug.Log(result);
+                        //Debug.Log("sgfIndexListに " + result + " をAddした！");
+
+                        sgfIndexList.Add(treeNodes);
+                        treeNodes = new List<int>();
+                        treeBranchList = new List<int>();
+                        branchIndexList = new List<List<int>>();
+                    }
+                }
             }
 
-			foreach (List<int> indexList in sgfIndexList)
-			{
-				string result = string.Join(",", indexList.Select(x => x.ToString()).ToArray());
-				Debug.Log(result.ToString());
-			}
+            foreach (List<int> indexList in sgfIndexList)
+            {
+                string result = string.Join(",", indexList.Select(x => x.ToString()).ToArray());
+                Debug.Log(result);
+            }
         }
     }
 
     //SGFの文字座標を数字座標に変換
     private int ConvertZahyoStringToInt(string zahyo)
     {
-		int boardSize = 13; //碁盤のサイズ
-		
-		int zahyo1 = CharToInt(zahyo[0]);
-		int zahyo2 = CharToInt(zahyo[1]);
-		int index = (zahyo1 * boardSize) + zahyo2;
-		
-		return index;
+        int boardSize = 13; //碁盤のサイズ
+
+        int zahyo1 = CharToInt(zahyo[0]);
+        int zahyo2 = CharToInt(zahyo[1]);
+        int index = zahyo1 + (zahyo2 * boardSize);
+
+        return index;
     }
 
     //文字を数値に変換する関数

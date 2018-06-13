@@ -52,14 +52,16 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\SGFParser.cs" />
-     <None Include="Assets\SGF\Easy\tsumego2.txt" />
-     <None Include="Assets\SGF\Easy\tsumego1.txt" />
-     <None Include="Assets\SGF\Easy\tsumego3.txt" />
- <Reference Include="Unity.PackageManagerUI.Editor">
- <HintPath>C:/Users/inten/Documents/SGFParser/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
- </Reference>
+     <None Include="Assets\SGF\Normal\tsumego (1).txt" />
+     <None Include="Assets\SGF\Normal\tsumego (2).txt" />
+     <None Include="Assets\SGF\Normal\tsumego (4).txt" />
+     <None Include="Assets\SGF\Normal\tsumego (3).txt" />
+     <None Include="Assets\SGF\Normal\tsumego (5).txt" />
  <Reference Include="UnityEditor.StandardEvents">
  <HintPath>C:/Users/inten/Documents/SGFParser/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
+ </Reference>
+ <Reference Include="Unity.PackageManagerUI.Editor">
+ <HintPath>C:/Users/inten/Documents/SGFParser/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.AIModule">
  <HintPath>C:/Program Files/Unity/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
