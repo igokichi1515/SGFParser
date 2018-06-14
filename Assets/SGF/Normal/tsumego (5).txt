@@ -1,7 +1,0 @@
-(;AB[kl][kk][li][lj][km]AW[jl][jk][kj][kh][lh][ki][mh][jm][jj]AP[MultiGo:4.2.4]
-SZ[13]MULTIGOGM[1]
-;B[mk]
-(;W[ll];B[lm]
-(;W[mi];B[ml])
-(;W[ml];B[mi]))
-(;W[mi];B[ll];W[mj];B[mm];W[lk];B[lj]))

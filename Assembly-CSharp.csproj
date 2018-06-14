@@ -52,11 +52,11 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\SGFParser.cs" />
-     <None Include="Assets\SGF\Normal\tsumego (1).txt" />
-     <None Include="Assets\SGF\Normal\tsumego (2).txt" />
-     <None Include="Assets\SGF\Normal\tsumego (4).txt" />
-     <None Include="Assets\SGF\Normal\tsumego (3).txt" />
-     <None Include="Assets\SGF\Normal\tsumego (5).txt" />
+     <None Include="Assets\SGF\tsumego (1).txt" />
+     <None Include="Assets\SGF\tsumego (2).txt" />
+     <None Include="Assets\SGF\tsumego (4).txt" />
+     <None Include="Assets\SGF\tsumego (3).txt" />
+     <None Include="Assets\SGF\tsumego (5).txt" />
  <Reference Include="UnityEditor.StandardEvents">
  <HintPath>C:/Users/inten/Documents/SGFParser/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
  </Reference>
