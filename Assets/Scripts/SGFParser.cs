@@ -7,15 +7,15 @@ using UnityEngine;
 public class SGFParser : MonoBehaviour
 {
 
-    public List<TextAsset> sgfFiles;
-    private List<List<int>> sgfIndexList;
-    private List<int> treeNodes;
-    private List<List<int>> branchIndexList;
-    private List<int> treeBranchList;
-    private string sgfStr = "";
+    public List<TextAsset> sgfFiles;            //SGFファイル（txt形式）のリスト
+    private List<List<int>> sgfIndexList;       //最後のログ出力用の変換後データ格納リスト
+    private List<int> treeNodes;                //分岐が終わった or 無い手順のときに手順情報を保持するリスト
+    private List<List<int>> branchIndexList;    //分岐があったときに一時的に手順情報を保持するリスト
+    private List<int> treeBranchList;           //分岐があったときのtreeNodesより後の手順情報を保持するリスト
+    private string sgfStr = "";                 //SGFファイルから読み込んだテキストデータ
 
-    private bool isTree;
-    private int treeDepth = 0;
+    private bool isTree;                        //現在、分岐があるかどうかのフラグ　分岐あり -> true, 分岐無し -> false
+    private int treeDepth = 0;                  //分岐の深さ
 
     void Start()
     {
@@ -32,55 +32,67 @@ public class SGFParser : MonoBehaviour
     {
         foreach (TextAsset sgf in sgfFiles)
         {
+            //変数の初期化
             treeDepth = 0;
             isTree = false;
             treeNodes = new List<int>();
             treeBranchList = new List<int>();
             branchIndexList = new List<List<int>>();
 
+            //変換に不要なMultiGoのプロパティを削除
             StringBuilder sb = new StringBuilder(sgf.text);
             sb.Replace("SZ[13]", "")
             .Replace("MULTIGOGM[1]", "")
             .Replace("AP[MultiGo:4.2.4]", "");
 
+            //ファイルのテキストを行ごとのテキストデータにして配列に格納
             sgfStr = sb.ToString();
             string[] sgfLines = sgfStr.Split('\n');
 
+            //行ごとにループ
             for (int n = 0; n < sgfLines.Length; n++)
             {
                 if (sgfLines[n].Length < 7) continue;
                 if (n == 0 || n == 1) continue;
+                
                 Debug.Log("文字列(1行): " + sgfLines[n]);
                 Debug.Log("ツリーの深さ: " + treeDepth);
-                //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
+                //1行に分岐終了の括弧がいくつあるか
                 int endCount = CountChar(sgfLines[n], ')');
+
                 //分岐がある場合
                 if (endCount == 0)
                 {
+                    //分岐の深さを1加算
                     treeDepth++;
                     if (treeDepth >= 1) isTree = true;
-
+                    
+                    //座標データごとに分割して配列に格納
                     string[] nodeArray = sgfLines[n].Split(';');
                     foreach (string node in nodeArray)
                     {
+                        //座標データを囲む大括弧がどの位置からはじまってどの位置で終わるか
                         int open = node.IndexOf("[");
                         int close = node.IndexOf("]");
-
+                        
+                        //座標データじゃなければスキップ
                         if (open < 0 || close < 0)
                         {
                             continue;
                         }
+                        //座標データである場合
                         else
                         {
                             Debug.Log("座標文字: " + node);
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
+
+                            //手順データ(B or W)である場合のみ処理を行う
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
                                 {
-                                    //Debug.Log("終わり括弧が0つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
                                     treeBranchList.Add(ConvertZahyoStringToInt(value));
                                 }
                                 else
@@ -94,7 +106,6 @@ public class SGFParser : MonoBehaviour
                     if (isTree)
                     {
                         branchIndexList.Add(treeBranchList);
-                        //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
                     }
                 }
                 //分岐がない場合
@@ -115,11 +126,11 @@ public class SGFParser : MonoBehaviour
                             Debug.Log("座標文字: " + node);
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
+
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
                                 {
-                                    //Debug.Log("終わり括弧が1つでtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
                                     treeBranchList.Add(ConvertZahyoStringToInt(value));
                                 }
                                 else
@@ -135,13 +146,11 @@ public class SGFParser : MonoBehaviour
                         if (branchIndexList.Count == treeDepth)
                         {
                             branchIndexList.Add(treeBranchList);
-                            //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
                             for (int i = 0; i < treeDepth; i++)
                             {
                                 foreach (int bIndex in branchIndexList[i])
                                 {
-                                    //Debug.Log("閉じ括弧が1つ以上でtreeNodesに " + bIndex + " をAddした！");
                                     treeNodes.Add(bIndex);
                                 }
                             }
@@ -149,10 +158,6 @@ public class SGFParser : MonoBehaviour
                     }
                     else
                     {
-                        //string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
-                        //Debug.Log(result);
-                        //Debug.Log("sgfIndexListに " + result + " をAddした！");
-
                         sgfIndexList.Add(treeNodes);
                         treeNodes = new List<int>();
                         treeBranchList = new List<int>();
@@ -162,10 +167,12 @@ public class SGFParser : MonoBehaviour
                 //分岐がある場合かつ、現在の分岐の最後である場合
                 else if (endCount >= 2)
                 {
+                    //括弧が2つの場合
                     if (endCount == 2)
                     {
                         treeDepth--;
                     }
+                    //括弧が3つ以上の場合
                     else if (endCount >= 3)
                     {
                         treeDepth -= (endCount - 1);
@@ -186,11 +193,11 @@ public class SGFParser : MonoBehaviour
                             Debug.Log("座標文字: " + node);
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
+
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
                                 {
-                                    //Debug.Log("終わり括弧が2つ以上でtreeBranchListに " + ConvertZahyoStringToInt(value) + " をAddした！");
                                     treeBranchList.Add(ConvertZahyoStringToInt(value));
                                 }
                                 else
@@ -209,13 +216,11 @@ public class SGFParser : MonoBehaviour
                         if (branchIndexList.Count == treeDepth)
                         {
                             branchIndexList.Add(treeBranchList);
-                            //Debug.Log("branchIndexList要素数: " + branchIndexList.Count);
 
                             for (int i = 0; i < treeDepth; i++)
                             {
                                 foreach (int bIndex in branchIndexList[i])
                                 {
-                                    //Debug.Log("閉じ括弧が2つ以上でtreeNodesに " + bIndex + " をAddした！");
                                     treeNodes.Add(bIndex);
                                 }
                             }
@@ -224,27 +229,23 @@ public class SGFParser : MonoBehaviour
                     else
                     {
                         bool isLast = (sgfLines.Length - 1) == n;
+
+                        //ファイルの最終行のデータだった場合
                         if (isLast)
                         {
                             if (branchIndexList.Count == treeDepth)
                             {
                                 branchIndexList.Add(treeBranchList);
-                                //("branchIndexList要素数: " + branchIndexList.Count);
 
                                 for (int i = 0; i < treeDepth; i++)
                                 {
                                     foreach (int bIndex in branchIndexList[i])
                                     {
-                                        //Debug.Log("閉じ括弧が2つ以上でtreeNodesに " + bIndex + " をAddした！");
                                         treeNodes.Add(bIndex);
                                     }
                                 }
                             }
                         }
-
-                        //string result = string.Join(",", treeNodes.Select(x => x.ToString()).ToArray());
-                        //Debug.Log(result);
-                        //Debug.Log("sgfIndexListに " + result + " をAddした！");
 
                         sgfIndexList.Add(treeNodes);
                         treeNodes = new List<int>();
@@ -254,6 +255,7 @@ public class SGFParser : MonoBehaviour
                 }
             }
 
+            //変換結果をログ出力
             foreach (List<int> indexList in sgfIndexList)
             {
                 string result = string.Join(",", indexList.Select(x => x.ToString()).ToArray());
