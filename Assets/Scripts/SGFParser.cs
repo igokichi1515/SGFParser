@@ -13,7 +13,7 @@ public class SGFParser : MonoBehaviour
     private List<List<int>> sgfIndexList;       //最後のログ出力用の変換後データ格納リスト
     private List<int> treeNodes;                //分岐が終わった or 無い手順のときに手順情報を保持するリスト
     private List<List<int>> branchIndexList;    //分岐があったときに一時的に手順情報を保持するリスト
-    private List<int> treeBranchList;           //分岐があったときにtreeNodesより後の手順情報を保持するリスト
+    private List<int> treeBranchList;           //分岐があったときのtreeNodesより後の手順情報を保持するリスト
     private string sgfStr;                      //SGFファイルから読み込んだテキストデータ
     private bool isTree;                        //現在、分岐があるかどうかのフラグ　分岐あり -> true, 分岐無し -> false
     private bool isRight;                       //現在の行に正解手順コメント「C[RIGHT]」が含まれているかどうか
@@ -62,39 +62,37 @@ public class SGFParser : MonoBehaviour
             //行ごとにループ
             for (int n = 0; n < sgfLines.Length; n++)
             {
+                Debug.Log("文字列(1行): " + sgfLines[n]);
+
                 //初期配石データが含まれている場合は解析してリストに格納する
+                //黒の初期配石（AB）
                 if (sgfLines[n].Contains("AB["))
                 {
                     //黒
                     ParseInitPlacement(sgfLines[n], true);
                 }
-                else if (sgfLines[n].Contains("AW["))
+                //白の初期配石（AW）
+                if (sgfLines[n].Contains("AW["))
                 {
                     //白
                     ParseInitPlacement(sgfLines[n], false);
                 }
 
-                // if (!sgfLines[n].Contains(";B[") || !sgfLines[n].Contains(";W[")) continue;
-                // if (n == 0 || n == 1) continue;
-
-                Debug.Log("文字列(1行): " + sgfLines[n]);
-                Debug.Log("ツリーの深さ: " + treeDepth);
-
-                //正解手順コメントがあるかどうか判定してフラグを切り替える
-                if (sgfLines[n].Contains("C[RIGHT]"))
-                {
-                    isRight = true;
-                }
+                //手順データ（B or W）
+                if (!sgfLines[n].Contains(";B[") && !sgfLines[n].Contains(";W[")) continue;
 
                 //1行に分岐終了の括弧がいくつあるか
                 int endCount = CountChar(sgfLines[n], ')');
 
                 //分岐がある場合
-                if (endCount == 0)
+                if (endCount <= 0)
                 {
                     //分岐の深さを1加算
                     treeDepth++;
-                    if (treeDepth >= 1) isTree = true;
+                    Debug.Log("treeDepthを1加算: " + treeDepth);
+
+                    //分岐中フラグをtrueにする
+                    isTree = true;
 
                     //座標データごとに分割して配列に格納
                     string[] nodeArray = sgfLines[n].Split(';');
@@ -104,7 +102,7 @@ public class SGFParser : MonoBehaviour
                         int open = node.IndexOf("[");
                         int close = node.IndexOf("]");
 
-                        //座標データじゃなければスキップ
+                        //座標データがなければスキップ
                         if (open < 0 || close < 0)
                         {
                             continue;
@@ -116,7 +114,7 @@ public class SGFParser : MonoBehaviour
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
 
-                            //手順データ(B or W)である場合のみ処理を行う
+                            //手順データ(B or W)である場合のみ処理を行う（すべて黒先を前提条件とする）
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
@@ -139,13 +137,25 @@ public class SGFParser : MonoBehaviour
                 //分岐がない場合
                 else if (endCount == 1)
                 {
+                    //正解手順コメントがあるかどうか判定してフラグを切り替える
+                    if (sgfLines[n].Contains("C[RIGHT]"))
+                    {
+                        isRight = true;
+                    }
+                    else
+                    {
+                        isRight = false;
+                    }
+
+                    //手順データを座標ごとに分割
                     string[] nodeArray = sgfLines[n].Split(';');
                     foreach (string node in nodeArray)
                     {
                         int open = node.IndexOf("[");
                         int close = node.IndexOf("]");
 
-                        if (open < 0 || close < 0)
+                        //座標データでない、かつ正解手順フラグが立っていなければスキップ
+                        if (open < 0 || close < 0 && !isRight)
                         {
                             continue;
                         }
@@ -155,6 +165,7 @@ public class SGFParser : MonoBehaviour
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
 
+                            //手順データ(B or W)である場合のみ処理を行う（すべて黒先を前提条件とする）
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
@@ -182,27 +193,31 @@ public class SGFParser : MonoBehaviour
                                     treeNodes.Add(bIndex);
                                 }
 
-                                foreach (int node in treeNodes)
+                                //正解手順だったら999、失敗手順なら998を手順の最後に追加
+                                if (isRight)
                                 {
-                                    Debug.Log("追加したノード -> " + node);
+                                    Debug.Log("999をtreeNodesに追加");
+                                    treeNodes.Add(999);
+                                }
+                                else
+                                {
+                                    Debug.Log("998をtreeNodesに追加");
+                                    treeNodes.Add(998);
                                 }
                             }
                         }
                     }
                     else
                     {
-                        foreach (int node in treeNodes)
-                        {
-                            Debug.Log("追加したノード -> " + node);
-                        }
-                                                
                         //正解手順だったら999、失敗手順なら998を手順の最後に追加
                         if (isRight)
                         {
+                            Debug.Log("999をtreeNodesに追加");
                             treeNodes.Add(999);
                         }
                         else
                         {
+                            Debug.Log("998をtreeNodesに追加");
                             treeNodes.Add(998);
                         }
 
@@ -218,12 +233,37 @@ public class SGFParser : MonoBehaviour
                     //括弧が2つの場合
                     if (endCount == 2)
                     {
-                        treeDepth--;
+                        if ((sgfLines.Length - 1) != n)
+                        {
+                            treeDepth--;
+                            Debug.Log("括弧が2つの場合: " + treeDepth);
+                        }
                     }
                     //括弧が3つ以上の場合
                     else if (endCount >= 3)
                     {
-                        treeDepth -= (endCount - 1);
+                        if ((sgfLines.Length - 1) != n)
+                        {
+                            treeDepth -= (endCount - 1);
+                            Debug.Log("括弧が3つ以上の場合: " + treeDepth);
+                        }
+                    }
+                    
+                    //分岐がすべて終了したか、ファイルの最終行だった場合は分岐判定フラグをfalseにする
+                    if (treeDepth <= 0 || (sgfLines.Length - 1) == n)
+                    {
+                        isTree = false;
+                        isRight = false;
+                    }
+
+                    //正解手順コメントがあるかどうか判定してフラグを切り替える
+                    if (sgfLines[n].Contains("C[RIGHT]"))
+                    {
+                        isRight = true;
+                    }
+                    else
+                    {
+                        isRight = false;
                     }
 
                     string[] nodeArray = sgfLines[n].Split(';');
@@ -232,7 +272,8 @@ public class SGFParser : MonoBehaviour
                         int open = node.IndexOf("[");
                         int close = node.IndexOf("]");
 
-                        if (open < 0 || close < 0)
+                        //座標データでない、かつ正解手順フラグが立っていなければスキップ
+                        if (open < 0 || close < 0 && !isRight)
                         {
                             continue;
                         }
@@ -242,6 +283,7 @@ public class SGFParser : MonoBehaviour
                             string value = node.Substring(open + 1, 2);
                             string key = node.Substring(0, open);
 
+                            //手順データ(B or W)である場合のみ処理を行う（すべて黒先を前提条件とする）
                             if (key == "B" || key == "W")
                             {
                                 if (isTree)
@@ -256,8 +298,19 @@ public class SGFParser : MonoBehaviour
                         }
                     }
 
-                    if (treeDepth <= 0) isTree = false;
-                    if ((sgfLines.Length - 1) == n) isTree = false;
+                    // //括弧が2つの場合
+                    // if (endCount == 2)
+                    // {
+                    //     treeDepth--;
+                    // }
+                    // //括弧が3つ以上の場合
+                    // else if (endCount >= 3)
+                    // {
+                    //     treeDepth -= (endCount - 1);
+                    // }
+                    
+                    // if (treeDepth <= 0) isTree = false;
+                    // if ((sgfLines.Length - 1) == n) isTree = false;
 
                     if (isTree)
                     {
@@ -271,10 +324,18 @@ public class SGFParser : MonoBehaviour
                                 {
                                     treeNodes.Add(bIndex);
                                 }
-                            }
-                            foreach (int node in treeNodes)
-                            {
-                                Debug.Log("追加したノード -> " + node);
+
+                                //正解手順だったら999、失敗手順なら998を手順の最後に追加
+                                if (isRight)
+                                {
+                                    Debug.Log("999をtreeNodesに追加");
+                                    treeNodes.Add(999);
+                                }
+                                else
+                                {
+                                    Debug.Log("998をtreeNodesに追加");
+                                    treeNodes.Add(998);
+                                }
                             }
                         }
                     }
@@ -295,31 +356,60 @@ public class SGFParser : MonoBehaviour
                                     {
                                         treeNodes.Add(bIndex);
                                     }
+
+                                    //正解手順だったら999、失敗手順なら998を手順の最後に追加
+                                    if (isRight)
+                                    {
+                                        Debug.Log("999をtreeNodesに追加");
+                                        treeNodes.Add(999);
+                                    }
+                                    else
+                                    {
+                                        Debug.Log("998をtreeNodesに追加");
+                                        treeNodes.Add(998);
+                                    }
                                 }
-                                
-                                foreach (int node in treeNodes)
-                                {
-                                    Debug.Log("追加したノード -> " + node);
-                                }                        
                             }
                         }
 
-                        //正解手順だったら999、失敗手順なら998を手順の最後に追加
-                        if (isRight)
-                        {
-                            treeNodes.Add(999);
-                        }
-                        else
-                        {
-                            treeNodes.Add(998);
-                        }
+                        // //正解手順だったら999、失敗手順なら998を手順の最後に追加
+                        // if (isRight)
+                        // {
+                        //     Debug.Log("999をtreeNodesに追加");
+                        //     treeNodes.Add(999);
+                        // }
+                        // else
+                        // {
+                        //     Debug.Log("998をtreeNodesに追加");
+                        //     treeNodes.Add(998);
+                        // }
 
-                        sgfIndexList.Add(treeNodes);
+                        sgfIndexList.Add(treeNodes);                        
                         treeNodes = new List<int>();
                         treeBranchList = new List<int>();
                         branchIndexList = new List<List<int>>();
                     }
+
+                    // //括弧が2つの場合
+                    // if (endCount == 2)
+                    // {
+                    //     treeDepth--;
+                    // }
+                    // //括弧が3つ以上の場合
+                    // else if (endCount >= 3)
+                    // {
+                    //     treeDepth -= (endCount - 1);
+                    // }
+                    
+                    // //分岐がすべて終了したか、ファイルの最終行だった場合は分岐判定フラグをfalseにする
+                    // if (treeDepth <= 0 || (sgfLines.Length - 1) == n)
+                    // {
+                    //     isTree = false;
+                    //     isRight = false;
+                    // }
                 }
+
+                Debug.Log("ツリーの深さ: " + treeDepth);
             }
 
             //初期配石リストを初期化
@@ -347,21 +437,12 @@ public class SGFParser : MonoBehaviour
             string result = "";
             for (int j = 0; j < sgfIndexList.Count; j++)
             {
-                foreach (int nube in sgfIndexList[j])
-                {
-                    Debug.Log("デバッグ用" + j + "-> " +  nube);
-                }
-                
                 result = "";
                 result += "\"" + string.Join(",", sgfIndexList[j].Select(x => x.ToString()).ToArray()) + "\"";
 
-                if (j < sgfIndexList.Count)
+                if (j < sgfIndexList.Count - 1)
                 {
-                    result += "," + "\n";
-                }
-                else
-                {
-                    result += "\n";
+                    result += ",";
                 }
 
                 //変換結果をコンソールで表示
